@@ -8,6 +8,7 @@
 
 import urllib.request
 import urllib.error
+import urllib.parse
 import subprocess
 import sys
 from datetime import datetime
@@ -23,6 +24,18 @@ NOTIFY_OK_MSG = "✅ String found — Continue to wait."
 NOTIFY_FAIL_MSG = f"⚠️ Action required! String NOT found at: {URL}."
 
 TIMEOUT = 15  # seconds
+
+# ------------------------------------------------------------------------------
+# PUSHOVER CONFIGURATION — loaded from config.py (not tracked by git)
+# Copy config.example.py to config.py and add your credentials there
+# ------------------------------------------------------------------------------
+try:
+    from config import PUSHOVER_API_TOKEN, PUSHOVER_USER_KEY
+except ImportError:
+    PUSHOVER_API_TOKEN = ""
+    PUSHOVER_USER_KEY  = ""
+
+PUSHOVER_API_URL = "https://api.pushover.net/1/messages.json"
 
 
 # ------------------------------------------------------------------------------
@@ -41,6 +54,38 @@ def notify(title: str, message: str, sound: str = "default") -> None:
         f'sound name "{sound}"'
     )
     subprocess.run(["osascript", "-e", script], check=False)
+
+
+def pushover(title: str, message: str, priority: int = 0) -> None:
+    """
+    Send a Pushover push notification.
+    Only fires if PUSHOVER_API_TOKEN and PUSHOVER_USER_KEY are configured.
+    priority: -1 (quiet), 0 (normal), 1 (high), 2 (require confirmation)
+    """
+    if not PUSHOVER_API_TOKEN or not PUSHOVER_USER_KEY:
+        return  # Pushover not configured — skip silently
+
+    payload = urllib.parse.urlencode({
+        "token":    PUSHOVER_API_TOKEN,
+        "user":     PUSHOVER_USER_KEY,
+        "title":    title,
+        "message":  message,
+        "priority": priority,
+    }).encode("utf-8")
+
+    try:
+        req = urllib.request.Request(
+            PUSHOVER_API_URL,
+            data=payload,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            if resp.status == 200:
+                log("Pushover notification sent.")
+            else:
+                log(f"WARNING: Pushover returned status {resp.status}")
+    except Exception as e:
+        log(f"WARNING: Pushover notification failed — {e}")
 
 
 def open_url(url: str) -> None:
@@ -80,18 +125,22 @@ def main() -> None:
 
     # Connection / fetch failed
     if page_content is None:
-        notify(NOTIFY_TITLE, f"❌ Could not reach {URL}", sound="Basso")
+        msg = f"❌ Could not reach {URL}"
+        notify(NOTIFY_TITLE, msg, sound="Basso")
+        pushover(NOTIFY_TITLE, msg, priority=1)
         sys.exit(1)
 
     # String found — all good
     if SEARCH_STRING in page_content:
         log(f"OK: String found at {URL}")
         notify(NOTIFY_TITLE, NOTIFY_OK_MSG)
+        pushover(NOTIFY_TITLE, NOTIFY_OK_MSG, priority=-1)
 
     # String missing — alert and open browser
     else:
         log(f"ACTION REQUIRED: String NOT found at {URL}")
         notify(NOTIFY_TITLE, NOTIFY_FAIL_MSG, sound="Sosumi")
+        pushover(NOTIFY_TITLE, NOTIFY_FAIL_MSG, priority=1)
         open_url(URL)
 
 

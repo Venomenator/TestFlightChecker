@@ -1,1 +1,8 @@
 .DS_Store
+
+# Local credentials — do not commit
+config.py
+
+# Python
+__pycache__/
+*.pyc
