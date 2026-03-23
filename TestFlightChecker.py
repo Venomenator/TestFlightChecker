@@ -15,8 +15,8 @@ from datetime import datetime
 # ------------------------------------------------------------------------------
 # CONFIGURATION — edit these values
 # ------------------------------------------------------------------------------
-URL = "https://example.com"
-SEARCH_STRING = "Expected text here"
+URL = "https://testflight.apple.com/join/zGQJrQDU"
+SEARCH_STRING = "This beta is full."
 
 NOTIFY_TITLE = "URL Monitor"
 NOTIFY_OK_MSG = "✅ String found — Continue to wait."
