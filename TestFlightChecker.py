@@ -20,8 +20,8 @@ URL = "https://testflight.apple.com/join/zGQJrQDU"
 SEARCH_STRING = "This beta is full."
 
 NOTIFY_TITLE = "URL Monitor"
-NOTIFY_OK_MSG = "✅ String found — Continue to wait."
-NOTIFY_FAIL_MSG = f"⚠️ Action required! String NOT found at: {URL}."
+NOTIFY_OK_MSG = "❌ String found — Beta is Full."
+NOTIFY_FAIL_MSG = "✅ Action required! String NOT found at: {URL}."
 
 TIMEOUT = 15  # seconds
 
